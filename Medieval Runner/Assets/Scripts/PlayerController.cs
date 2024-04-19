@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -6,36 +7,55 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _movementSpeed;
     [SerializeField] private AnimationCurve _xAnimation;
 
-    private Rigidbody _rigidbody;
+    private bool _isOnLeftEdge;
+    private bool _isOnRightEdge;
 
-    private const float AnimationDurtaion = 1f;
-    private const float OffsetX = 3.5f;
-
-    private void Start()
-    {
-        _rigidbody = GetComponent<Rigidbody>();
-    }
+    private const float AnimationDuration = 1f;
+    private const float HorizontalBound = 3.5f;
 
     private void Update()
     {
         transform.Translate(Vector3.forward * (Time.deltaTime * _movementSpeed));
 
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        if (Mathf.Abs(transform.position.x) - HorizontalBound != 0f && transform.position.x != 0f) return;
+
+        UpdatePlayerStateOfCurrentSide();
+
+        if ((Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow)) && !_isOnRightEdge)
         {
             StopAllCoroutines();
-            StartCoroutine(SwitchSide(transform, _xAnimation, Side.Right));
+            StartCoroutine(SwitchSide(transform, Side.Right));
         }
 
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        if ((Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow)) && !_isOnLeftEdge)
         {
             StopAllCoroutines();
-            StartCoroutine(SwitchSide(transform, _xAnimation, Side.Left));
+            StartCoroutine(SwitchSide(transform, Side.Left));
         }
-
-        if (transform.position.y < -5) transform.position = Vector3.zero;
     }
 
-    public IEnumerator SwitchSide(Transform obj, AnimationCurve curve, Side side)
+    private void UpdatePlayerStateOfCurrentSide()
+    {
+        if (Math.Abs(transform.position.x - HorizontalBound) < 0.001f)
+        {
+            _isOnRightEdge = true;
+            _isOnLeftEdge = false;
+        }
+
+        if (Math.Abs(transform.position.x - (-HorizontalBound)) < 0.001f)
+        {
+            _isOnRightEdge = false;
+            _isOnLeftEdge = true;
+        }
+
+        if (transform.position.x == 0)
+        {
+            _isOnRightEdge = false;
+            _isOnLeftEdge = false;
+        }
+    }
+
+    private IEnumerator SwitchSide(Transform obj, Side side)
     {
         var expiredTime = 0f;
         var startPosition = obj.position;
@@ -43,8 +63,8 @@ public class PlayerController : MonoBehaviour
         while (expiredTime < 1)
         {
             expiredTime += Time.deltaTime;
-            var progress = expiredTime / AnimationDurtaion;
-            obj.position = startPosition + new Vector3(curve.Evaluate(progress) * OffsetX * (int)side, 0, 0);
+            var progress = expiredTime / AnimationDuration;
+            obj.position = startPosition + new Vector3(_xAnimation.Evaluate(progress) * HorizontalBound * (int)side, 0, 0);
 
             yield return null;
         }

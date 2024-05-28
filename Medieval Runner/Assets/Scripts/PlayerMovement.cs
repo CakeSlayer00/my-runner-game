@@ -1,67 +1,71 @@
-using System;
 using System.Collections;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _speed;
+    [SerializeField] private float _moveUnit;
+    [SerializeField] private AnimationCurve _jumpAnimation; 
+    [SerializeField] private float _jumpHeight = 3;
     
-    private const float MoveUnit = 3f;
-    private const float AnimationDuration = 0.2f;
+    private const float JumpDuration = 1.1f;
+    
+    private float _currentLane;
+    private float _targetLane;
+    
+    public bool IsRunning { get; private set; }
+    public bool IsOnJump { get; private set; }
 
-    public bool isCoroutineRunning;
-    
-    private void Update()
+    private void Start()
     {
-        transform.Translate(Vector3.forward * (Time.deltaTime * _speed));
+        IsRunning = true;
     }
 
-    public IEnumerator SwitchSide(Side side)
+    private void Update()
     {
-        isCoroutineRunning = true;
-        Vector3 currPosition = transform.position;
-        Vector3? targetPosition = GetTargetPosition(side);
-        if (targetPosition.Equals(Vector3.zero))
-        {
-            isCoroutineRunning = false;
-            yield break;
-        }
-        
-        float t = 0;
+        if (!IsRunning) return;
+
+        OnSwipe();
+    }
+
+    private IEnumerator Jump()
+    {
+        IsOnJump = true;
+
+        var t = 0f;
         while (t < 1)
         {
-            if (targetPosition != null)
-            {
-                transform.position = Vector3.Lerp(currPosition, targetPosition.Value, t);
-                t += Time.deltaTime / AnimationDuration;
-            }
+            transform.position = new Vector3(0, _jumpAnimation.Evaluate(t / JumpDuration), 0) * _jumpHeight;
+            t += Time.deltaTime;
             yield return null;
         }
 
-        transform.position = targetPosition.Value;
-        isCoroutineRunning = false;
+        IsOnJump = false;
     }
 
-    private Vector3? GetTargetPosition(Side side)
+    private void OnSwipe()
     {
-        var currPosition = new Vector3(Mathf.Round(transform.position.x) , transform.position.y , transform.position.z);
+        var t = 0f;
+        t += Time.deltaTime;
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            Vector3.right * (_moveUnit * _targetLane), t / 0.1f);
 
-        Vector3? targetPosition = side switch
-        {
-            Side.Left => currPosition.x is >= 0 and <= 3
-                ? new Vector3(currPosition.x - MoveUnit, currPosition.y, currPosition.z)
-                : Vector3.zero,
-            Side.Right => currPosition.x is >= -3 and <= 0
-                ? new Vector3(currPosition.x + MoveUnit, currPosition.y, currPosition.z)
-                : Vector3.zero,
-            _ => throw new ArgumentOutOfRangeException(nameof(side), side, null)
-        };
-
-        return targetPosition;
+        _currentLane = _targetLane;
     }
-}
 
-public enum Side
-{
-    Left, Right
+    public void SwipeLane(Lane dir)
+    {
+        if (_currentLane + (float)dir is < -1 or > 1) return;
+
+        _targetLane = _currentLane + (float)dir;
+    }
+
+    private void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.CompareTag("Obstacle"))
+        {
+            IsRunning = false;
+        }
+    }
 }

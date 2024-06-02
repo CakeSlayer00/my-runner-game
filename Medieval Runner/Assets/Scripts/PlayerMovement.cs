@@ -1,55 +1,46 @@
-using System.Collections;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private float _speed;
-    [SerializeField] private float _moveUnit;
-    [SerializeField] private AnimationCurve _jumpAnimation; 
-    [SerializeField] private float _jumpHeight = 3;
+    [SerializeField] private float _swipeSpeed;
+    [SerializeField] private float _swipeUnit;
+    [SerializeField] private float _jumpDuration;
+    [SerializeField] private AnimationCurve _jumpAnimation;
     
-    private const float JumpDuration = 1.1f;
+    private const float JumpBorderY = 2f;
     
-    private float _currentLane;
-    private float _targetLane;
-    
-    public bool IsRunning { get; private set; }
-    public bool IsOnJump { get; private set; }
+    public bool isGrounded = true;
 
-    private void Start()
-    {
-        IsRunning = true;
-    }
+    private float _targetLane;
+    private float _currentLane;
+    private float _expiredSecondsForJump;
 
     private void Update()
     {
-        if (!IsRunning) return;
-
         OnSwipe();
+        OnJump();
     }
 
-    private IEnumerator Jump()
+    private void OnJump()
     {
-        IsOnJump = true;
-
-        var t = 0f;
-        while (t < 1)
+        if (!isGrounded && _expiredSecondsForJump < 1)
         {
-            transform.position = new Vector3(0, _jumpAnimation.Evaluate(t / JumpDuration), 0) * _jumpHeight;
-            t += Time.deltaTime;
-            yield return null;
+            _expiredSecondsForJump += Time.deltaTime;
+            transform.position = new Vector3(transform.position.x,
+                _jumpAnimation.Evaluate(_expiredSecondsForJump / _jumpDuration) * JumpBorderY, transform.position.z);
+            return;
         }
 
-        IsOnJump = false;
+        isGrounded = true;
+        _expiredSecondsForJump = 0;
     }
 
     private void OnSwipe()
     {
-        var t = 0f;
-        t += Time.deltaTime;
         transform.position = Vector3.MoveTowards(
             transform.position,
-            Vector3.right * (_moveUnit * _targetLane), t / 0.1f);
+            new Vector3(_swipeUnit * _targetLane, transform.position.y, transform.position.z),
+            _swipeSpeed * Time.deltaTime);
 
         _currentLane = _targetLane;
     }
@@ -61,11 +52,23 @@ public class PlayerMovement : MonoBehaviour
         _targetLane = _currentLane + (float)dir;
     }
 
+    public void Jump()
+    {
+        isGrounded = false;
+    }
+
     private void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.CompareTag("Obstacle"))
         {
-            IsRunning = false;
+            GameOver();
         }
+
+        isGrounded = true;
+    }
+
+    private void GameOver()
+    {
+        Time.timeScale = 0f;
     }
 }

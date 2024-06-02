@@ -20,9 +20,10 @@ public class CharacterKeyboardInput : MonoBehaviour
         {
             _movement.SwipeLane(Lane.Right);
         }
-        
-        if (Input.GetKeyDown(KeyCode.Space) && !_movement.IsOnJump)
+
+        if (Input.GetKeyDown(KeyCode.Space) && _movement.isGrounded)
         {
+            _movement.Jump();
         }
     }
 }

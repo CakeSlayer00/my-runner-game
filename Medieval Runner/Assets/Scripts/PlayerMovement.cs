@@ -1,38 +1,44 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _swipeSpeed;
     [SerializeField] private float _swipeUnit;
     [SerializeField] private float _jumpDuration;
-    [SerializeField] private AnimationCurve _jumpAnimation;
+    [SerializeField] private AnimationCurve _jumpPositionEvaluaterCurve;
+    [SerializeField] private Animator _jumpAnimator;
     
     private const float JumpBorderY = 2f;
     
-    public bool isGrounded = true;
-
     private float _targetLane;
     private float _currentLane;
     private float _expiredSecondsForJump;
+    private readonly int _isOnJumpHash = Animator.StringToHash("isOnJump");
 
+    public bool isGrounded = true;
+    
     private void Update()
     {
         OnSwipe();
         OnJump();
     }
-
+    
     private void OnJump()
     {
-        if (!isGrounded && _expiredSecondsForJump < 1)
+        if (!isGrounded && _expiredSecondsForJump < _jumpDuration)
         {
             _expiredSecondsForJump += Time.deltaTime;
-            transform.position = new Vector3(transform.position.x,
-                _jumpAnimation.Evaluate(_expiredSecondsForJump / _jumpDuration) * JumpBorderY, transform.position.z);
+            transform.position = new Vector3(
+                transform.position.x,
+                _jumpPositionEvaluaterCurve.Evaluate(_expiredSecondsForJump / _jumpDuration) * JumpBorderY, 
+                transform.position.z);
             return;
         }
 
         isGrounded = true;
         _expiredSecondsForJump = 0;
+        _jumpAnimator.SetBool(_isOnJumpHash, false);
     }
 
     private void OnSwipe()
@@ -55,7 +61,10 @@ public class PlayerMovement : MonoBehaviour
     public void Jump()
     {
         isGrounded = false;
+        _jumpAnimator.SetBool(_isOnJumpHash , true);
     }
+
+    private void GameOver() => Time.timeScale = 0f;
 
     private void OnCollisionEnter(Collision other)
     {
@@ -63,12 +72,5 @@ public class PlayerMovement : MonoBehaviour
         {
             GameOver();
         }
-
-        isGrounded = true;
-    }
-
-    private void GameOver()
-    {
-        Time.timeScale = 0f;
     }
 }

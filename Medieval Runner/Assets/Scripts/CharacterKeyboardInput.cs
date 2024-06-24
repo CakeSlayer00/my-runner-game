@@ -21,9 +21,14 @@ public class CharacterKeyboardInput : MonoBehaviour
             _movement.SwipeLane(Lane.Right);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && _movement.isGrounded)
+        if (Input.GetKey(KeyCode.Space) && _movement.isGrounded)
         {
             _movement.Jump();
+        }
+        
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Time.timeScale = 1;
         }
     }
 }

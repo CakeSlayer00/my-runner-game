@@ -2488,7 +2488,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _jumpAnimator: {fileID: 1106004370}
+  _animator: {fileID: 1106004370}
   isGrounded: 1
 --- !u!54 &1793603953
 Rigidbody:

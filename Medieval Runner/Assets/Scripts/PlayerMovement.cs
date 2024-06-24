@@ -7,7 +7,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float _swipeUnit;
     [SerializeField] private float _jumpDuration;
     [SerializeField] private AnimationCurve _jumpPositionEvaluaterCurve;
-    [SerializeField] private Animator _jumpAnimator;
+    [SerializeField] private Animator _animator;
     
     private const float JumpBorderY = 2f;
     
@@ -38,7 +38,7 @@ public class PlayerMovement : MonoBehaviour
 
         isGrounded = true;
         _expiredSecondsForJump = 0;
-        _jumpAnimator.SetBool(_isOnJumpHash, false);
+        _animator.SetBool(_isOnJumpHash , false);
     }
 
     private void OnSwipe()
@@ -61,7 +61,7 @@ public class PlayerMovement : MonoBehaviour
     public void Jump()
     {
         isGrounded = false;
-        _jumpAnimator.SetBool(_isOnJumpHash , true);
+        _animator.SetBool(_isOnJumpHash , true);
     }
 
     private void GameOver() => Time.timeScale = 0f;
